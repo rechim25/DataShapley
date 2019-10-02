@@ -5,10 +5,10 @@ Code for implementation of  ["Data Shapley: Equitable Valuation of Data for Mach
 
 **Please cite the following work if you use this benchmark or the provided tools or implementations:**
 
-'''
+"""
 Ghorbani, A. and Zou, J., 2019, May. Data Shapley: Equitable Valuation of Data for Machine Learning. 
 In International Conference on Machine Learning (pp. 2242-2251).
-'''
+"""
 
 ## Prerequisites
 
