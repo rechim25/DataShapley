@@ -387,10 +387,10 @@ class DShap(object):
             samples_dir = os.path.join(self.directory, 'mem_{}_{}.pkl'.format(key, number))
             print(samples_dir)
             dic = pkl.load(open(samples_dir, 'rb'))
-            mem = np.concatenate([mem, dic['mem_{}'.format(key)]])
-            idxs = np.concatenate([idxs, dic['idxs_{}'.format(key)]])
             if not len(dic['mem_{}'.format(key)]):
                 continue
+            mem = np.concatenate([mem, dic['mem_{}'.format(key)]])
+            idxs = np.concatenate([idxs, dic['idxs_{}'.format(key)]])
             counter += len(dic['mem_{}'.format(key)])
             vals *= (counter - len(dic['mem_{}'.format(key)])) / counter
             vals += len(dic['mem_{}'.format(key)]) / counter * np.mean(mem, 0)
