@@ -34,7 +34,8 @@ class DShap(object):
             y_test: Test+Held-out labels
             sources: An array or dictionary assiging each point to its group.
                 If None, evey points gets its individual value.
-            samples_weights: Weight of train samples, eqaul if None.
+            samples_weights: Weight of train samples in the loss function
+                (for models where weighted training method is enabled.)
             num_test: Number of data points used for evaluation metric.
             directory: Directory to save results and figures.
             problem: "Classification" or "Regression"(Not implemented yet.)
@@ -168,14 +169,14 @@ class DShap(object):
         if metric == 'f1':
             rnd_f1s = []
             for _ in range(1000):
-                rnd_y = np.random.permutation(self.y_test)
+                rnd_y = np.random.permutation(self.y)
                 rnd_f1s.append(f1_score(self.y_test, rnd_y))
             return np.mean(rnd_f1s)
         if metric == 'auc':
             return 0.5
         random_scores = []
         for _ in range(100):
-            rnd_y = np.random.permutation(self.y_test)
+            rnd_y = np.random.permutation(self.y)
             if self.sample_weight is None:
                 self.model.fit(self.X, rnd_y)
             else:
@@ -201,6 +202,8 @@ class DShap(object):
             X = self.X_test
         if y is None:
             y = self.y_test
+        if inspect.isfunction(metric):
+            return metric(model, X, y)
         if metric == 'accuracy':
             return model.score(X, y)
         if metric == 'f1':
@@ -211,8 +214,6 @@ class DShap(object):
             return my_auc_score(model, X, y)
         if metric == 'xe':
             return my_xe_score(model, X, y)
-        if inspect.isfunction(metric):
-            return metric(clf, X, y)
         raise ValueError('Invalid metric!')
         
     def run(self, save_every, err, tolerance=0.01, g_run=True, loo_run=True):
