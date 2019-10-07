@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import inspect
 from scipy.stats import logistic
 from scipy.stats import spearmanr
 from sklearn.naive_bayes import MultinomialNB
@@ -42,7 +43,11 @@ def is_fitted(model):
 
 def return_model(mode, **kwargs):
     
-    if mode=='logistic':
+    
+    if inspect.isclass(mode):
+        assert getattr(mode, 'fit', None) is not None, 'Custom model family should have a fit() method'
+        model = mode(**kwargs)
+    elif mode=='logistic':
         solver = kwargs.get('solver', 'liblinear')
         n_jobs = kwargs.get('n_jobs', None)
         max_iter = kwargs.get('max_iter', 5000)
