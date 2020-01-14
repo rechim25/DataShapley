@@ -169,7 +169,7 @@ class DShap(object):
         if metric == 'f1':
             rnd_f1s = []
             for _ in range(1000):
-                rnd_y = np.random.permutation(self.y)
+                rnd_y = np.random.permutation(self.y_test)
                 rnd_f1s.append(f1_score(self.y_test, rnd_y))
             return np.mean(rnd_f1s)
         if metric == 'auc':
