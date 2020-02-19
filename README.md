@@ -17,7 +17,7 @@ Code for implementation of  ["Data Shapley: Equitable Valuation of Data for Mach
 
 ## Prerequisites
 
-- Python, NumPy, Tensorflow, Scikit-learn, Matplotlib
+- Python, NumPy, Tensorflow 1.12, Scikit-learn, Matplotlib
 
 ## Basic Usage
 
