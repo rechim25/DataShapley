@@ -26,7 +26,7 @@ To divide value fairly between individual train data points/sources given the le
 ## Authors
 
 * **Amirata Ghorbani** - [Website](http://web.stanford.edu/~amiratag)
-* **James Zou** - [Website](https://sites.google.com/site/jamesyzou/)
+* **James Zou** - [Website](https://www.james-zou.com/)
 
 ## License
 
