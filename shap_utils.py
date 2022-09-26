@@ -82,7 +82,7 @@ def return_model(mode, **kwargs):
         alpha = kwargs.get('alpha', 1.0)
         model = Ridge(alpha=alpha, random_state=666)
     elif 'conv' in mode:
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         address = kwargs.get('address', 'weights/conv')
         hidden_units = kwargs.get('hidden_layer_sizes', [20])
         activation = kwargs.get('activation', 'relu')
@@ -311,4 +311,3 @@ def my_xe_score(clf, X, y):
     true_probs = probs[np.arange(len(y)), y]
     true_log_probs = np.log(np.clip(true_probs, 1e-12, None))
     return np.mean(true_log_probs)
-    
