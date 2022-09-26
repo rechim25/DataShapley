@@ -1,7 +1,6 @@
 import os
 import numpy as np
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, f1_score
 
