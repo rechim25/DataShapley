@@ -60,6 +60,8 @@ class DShap(object):
         if self.model_family is 'logistic':
             self.hidden_units = []
         if self.directory is not None:
+            if self.directory != './' and self.directory.startswith('..'):
+                raise Exception('given directory cannot be root directory or parent')
             if overwrite and os.path.exists(directory):
                 tf.compat.v1.gfile.DeleteRecursively(directory) # tf.io.gfile.DeleteRecursively(directory)
             if not os.path.exists(directory):
