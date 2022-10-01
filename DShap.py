@@ -658,3 +658,38 @@ class DShap(object):
                 else:
                     scores.append(init_score)
         return np.array(scores)[::-1]
+
+    def convergence_plots(self, source_indexes=None, tmc_plot=True, g_plot=False, num_cols=5, figsize=(12,16)):
+        num_subplots = 0
+        if source_indexes is None:
+            source_indexes = np.arange(len(self.sources))
+
+        num_subplots = min(20, len(source_indexes))
+        num_rows = num_subplots // num_cols
+        if num_subplots % num_cols > 0:
+            num_rows += 1
+
+        num_plot_markers = 0
+        num_tmc_iter = self.marginals_tmc.shape[0]
+        num_g_iter = self.marginals_g.shape[0]
+        if num_tmc_iter == 0:
+            num_plot_markers = num_g_iter
+        elif num_g_iter == 0:
+            num_plot_markers = num_tmc_iter
+        else:
+            num_plot_markers = min(num_tmc_iter, num_g_iter)
+
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=figsize)
+        fig.tight_layout(h_pad=5, w_pad=5) # fig.tight_layout(h_pad=2)
+
+        source_index = 0
+        for row in axes:
+            for col in row:
+                col.title.set_text('Source ' + str(source_index))
+                x = np.arange(1, num_plot_markers + 1)
+                if tmc_plot and num_tmc_iter > 0:
+                    col.plot(x, np.cumsum(self.marginals_tmc[:num_plot_markers, source_index]) / x, color='b')
+                if g_plot and num_g_iter > 0:
+                    col.plot(x, np.cumsum(self.marginals_g[:num_plot_markers, source_index]) / x, color='g')
+                source_index += 1
+        plt.show()
