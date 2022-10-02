@@ -1,7 +1,7 @@
-
-#______________________________________PEP8____________________________________
-#_______________________________________________________________________
+# ______________________________________PEP8____________________________________
+# _______________________________________________________________________
 import matplotlib
+
 matplotlib.use('Agg')
 import numpy as np
 import os
@@ -19,9 +19,10 @@ import inspect
 import _pickle as pkl
 from sklearn.metrics import f1_score, roc_auc_score
 
+
 class DShap(object):
-    
-    def __init__(self, X, y, X_test, y_test, num_test, sources=None, 
+
+    def __init__(self, X, y, X_test, y_test, num_test, sources=None,
                  sample_weight=None, directory=None, problem='classification',
                  model_family='logistic', metric='accuracy', seed=None,
                  overwrite=False,
@@ -48,7 +49,7 @@ class DShap(object):
                 scratch
             **kwargs: Arguments of the model
         """
-            
+
         if seed is not None:
             np.random.seed(seed)
             tf.random.set_seed(seed)
@@ -63,31 +64,31 @@ class DShap(object):
             if self.directory != './' and self.directory.startswith('..'):
                 raise Exception('given directory cannot be root directory or parent')
             if overwrite and os.path.exists(directory):
-                tf.compat.v1.gfile.DeleteRecursively(directory) # tf.io.gfile.DeleteRecursively(directory)
+                tf.compat.v1.gfile.DeleteRecursively(directory)  # tf.io.gfile.DeleteRecursively(directory)
             if not os.path.exists(directory):
-                os.makedirs(directory)  
+                os.makedirs(directory)
                 os.makedirs(os.path.join(directory, 'weights'))
                 os.makedirs(os.path.join(directory, 'plots'))
-            self._initialize_instance(X, y, X_test, y_test, num_test, 
+            self._initialize_instance(X, y, X_test, y_test, num_test,
                                       sources, sample_weight)
         if len(set(self.y)) > 2:
             assert self.metric != 'f1', 'Invalid metric for multiclass!'
             assert self.metric != 'auc', 'Invalid metric for multiclass!'
-        is_regression = (np.mean(self.y//1 == self.y) != 1)
+        is_regression = (np.mean(self.y // 1 == self.y) != 1)
         is_regression = is_regression or isinstance(self.y[0], np.float32)
         self.is_regression = is_regression or isinstance(self.y[0], np.float64)
         if self.is_regression:
             warnings.warn("Regression problem is no implemented.")
         self.model = return_model(self.model_family, **kwargs)
         self.random_score = self.init_score(self.metric)
-            
-    def _initialize_instance(self, X, y, X_test, y_test, num_test, 
+
+    def _initialize_instance(self, X, y, X_test, y_test, num_test,
                              sources=None, sample_weight=None):
-        """Loads or creates sets of data."""      
+        """Loads or creates sets of data."""
         if sources is None:
-            sources = {i:np.array([i]) for i in range(len(X))}
+            sources = {i: np.array([i]) for i in range(len(X))}
         elif not isinstance(sources, dict):
-            sources = {i:np.where(sources==i)[0] for i in set(sources)}
+            sources = {i: np.where(sources == i)[0] for i in set(sources)}
         data_dir = os.path.join(self.directory, 'data.pkl')
         if os.path.exists(data_dir):
             self._load_dataset(data_dir)
@@ -99,12 +100,12 @@ class DShap(object):
             self.X, self.y, self.sources = X, y, sources
             self.sample_weight = sample_weight
             data_dic = {'X': self.X, 'y': self.y, 'X_test': self.X_test,
-                     'y_test': self.y_test, 'X_heldout': self.X_heldout,
-                     'y_heldout':self.y_heldout, 'sources': self.sources}
+                        'y_test': self.y_test, 'X_heldout': self.X_heldout,
+                        'y_heldout': self.y_heldout, 'sources': self.sources}
             if sample_weight is not None:
                 data_dic['sample_weight'] = sample_weight
                 warnings.warn("Sample weight not implemented for G-Shapley")
-            pkl.dump(data_dic, open(data_dir, 'wb'))        
+            pkl.dump(data_dic, open(data_dir, 'wb'))
         loo_dir = os.path.join(self.directory, 'loo.pkl')
         self.vals_loo = None
         if os.path.exists(loo_dir):
@@ -115,28 +116,28 @@ class DShap(object):
         self._create_results_placeholder(
             self.directory, self.tmc_number, self.g_number,
             n_points, n_sources, self.model_family)
-        
+
     def _create_results_placeholder(self, directory, tmc_number, g_number,
-                                   n_points, n_sources, model_family):
+                                    n_points, n_sources, model_family):
         tmc_dir = os.path.join(
-            directory, 
+            directory,
             'mem_tmc_{}.pkl'.format(tmc_number.zfill(4))
         )
         g_dir = os.path.join(
-            directory, 
+            directory,
             'mem_g_{}.pkl'.format(g_number.zfill(4))
         )
         self.mem_tmc = np.zeros((0, n_points))
         self.mem_g = np.zeros((0, n_points))
         self.idxs_tmc = np.zeros((0, n_sources), int)
         self.idxs_g = np.zeros((0, n_sources), int)
-        pkl.dump({'mem_tmc': self.mem_tmc, 'idxs_tmc': self.idxs_tmc}, 
+        pkl.dump({'mem_tmc': self.mem_tmc, 'idxs_tmc': self.idxs_tmc},
                  open(tmc_dir, 'wb'))
         if model_family not in ['logistic', 'NN']:
             return
-        pkl.dump({'mem_g': self.mem_g, 'idxs_g': self.idxs_g}, 
+        pkl.dump({'mem_g': self.mem_g, 'idxs_g': self.idxs_g},
                  open(g_dir, 'wb'))
-        
+
     def _load_dataset(self, data_dir):
         '''Load the different sets of data if already exists.'''
         data_dic = pkl.load(open(data_dir, 'rb'))
@@ -144,29 +145,29 @@ class DShap(object):
         self.y_heldout = data_dic['y_heldout']
         self.X_test = data_dic['X_test']
         self.y_test = data_dic['y_test']
-        self.X = data_dic['X'] 
+        self.X = data_dic['X']
         self.y = data_dic['y']
         self.sources = data_dic['sources']
         if 'sample_weight' in data_dic.keys():
             self.sample_weight = data_dic['sample_weight']
         else:
             self.sample_weight = None
-        
+
     def _which_parallel(self, directory):
         '''Prevent conflict with parallel runs.'''
         previous_results = os.listdir(directory)
         tmc_nmbrs = [int(name.split('.')[-2].split('_')[-1])
-                      for name in previous_results if 'mem_tmc' in name]
+                     for name in previous_results if 'mem_tmc' in name]
         g_nmbrs = [int(name.split('.')[-2].split('_')[-1])
-                     for name in previous_results if 'mem_g' in name]        
-        tmc_number = str(np.max(tmc_nmbrs) + 1) if len(tmc_nmbrs) else '0' 
-        g_number = str(np.max(g_nmbrs) + 1) if len(g_nmbrs) else '0' 
+                   for name in previous_results if 'mem_g' in name]
+        tmc_number = str(np.max(tmc_nmbrs) + 1) if len(tmc_nmbrs) else '0'
+        g_number = str(np.max(g_nmbrs) + 1) if len(g_nmbrs) else '0'
         return tmc_number, g_number
-    
+
     def init_score(self, metric):
         """ Gives the value of an initial untrained model."""
         if metric == 'accuracy':
-            hist = np.bincount(self.y_test).astype(float)/len(self.y_test)
+            hist = np.bincount(self.y_test).astype(float) / len(self.y_test)
             return np.max(hist)
         if metric == 'f1':
             rnd_f1s = []
@@ -182,11 +183,11 @@ class DShap(object):
             if self.sample_weight is None:
                 self.model.fit(self.X, rnd_y)
             else:
-                self.model.fit(self.X, rnd_y, 
+                self.model.fit(self.X, rnd_y,
                                sample_weight=self.sample_weight)
             random_scores.append(self.value(self.model, metric))
         return np.mean(random_scores)
-        
+
     def value(self, model, metric=None, X=None, y=None):
         """Computes the values of the given model.
         Args:
@@ -217,7 +218,7 @@ class DShap(object):
         if metric == 'xe':
             return my_xe_score(model, X, y)
         raise ValueError('Invalid metric!')
-        
+
     def run(self, save_every, err, tolerance=0.01, g_run=True, loo_run=True):
         """Calculates data sources(points) values.
         
@@ -235,7 +236,7 @@ class DShap(object):
                 self.vals_loo = self._calculate_loo_vals(sources=self.sources)
                 self.save_results(overwrite=True)
         print('LOO values calculated!')
-        tmc_run = True 
+        tmc_run = True
         g_run = g_run and self.model_family in ['logistic', 'NN']
         while tmc_run or g_run:
             if g_run:
@@ -249,14 +250,14 @@ class DShap(object):
                     tmc_run = False
                 else:
                     self._tmc_shap(
-                        save_every, 
-                        tolerance=tolerance, 
+                        save_every,
+                        tolerance=tolerance,
                         sources=self.sources
                     )
                     self.vals_tmc = np.mean(self.mem_tmc, 0)
             if self.directory is not None:
                 self.save_results()
-            
+
     def save_results(self, overwrite=False):
         """Saves results computed so far."""
         if self.directory is None:
@@ -265,18 +266,18 @@ class DShap(object):
         if not os.path.exists(loo_dir) or overwrite:
             pkl.dump({'loo': self.vals_loo}, open(loo_dir, 'wb'))
         tmc_dir = os.path.join(
-            self.directory, 
+            self.directory,
             'mem_tmc_{}.pkl'.format(self.tmc_number.zfill(4))
         )
         g_dir = os.path.join(
-            self.directory, 
+            self.directory,
             'mem_g_{}.pkl'.format(self.g_number.zfill(4))
-        )  
-        pkl.dump({'mem_tmc': self.mem_tmc, 'idxs_tmc': self.idxs_tmc}, 
+        )
+        pkl.dump({'mem_tmc': self.mem_tmc, 'idxs_tmc': self.idxs_tmc},
                  open(tmc_dir, 'wb'))
-        pkl.dump({'mem_g': self.mem_g, 'idxs_g': self.idxs_g}, 
-                 open(g_dir, 'wb'))  
-        
+        pkl.dump({'mem_g': self.mem_g, 'idxs_g': self.idxs_g},
+                 open(g_dir, 'wb'))
+
     def _tmc_shap(self, iterations, tolerance=None, sources=None):
         """Runs TMC-Shapley algorithm.
         
@@ -297,25 +298,25 @@ class DShap(object):
         except:
             self._tol_mean_score()
         if tolerance is None:
-            tolerance = self.tolerance         
+            tolerance = self.tolerance
         marginals, idxs = [], []
         for iteration in range(iterations):
-            if 10*(iteration+1)/iterations % 1 == 0:
+            if 10 * (iteration + 1) / iterations % 1 == 0:
                 print('{} out of {} TMC_Shapley iterations.'.format(
                     iteration + 1, iterations))
             marginals, idxs = self.one_iteration(
-                tolerance=tolerance, 
+                tolerance=tolerance,
                 sources=sources
             )
             self.mem_tmc = np.concatenate([
-                self.mem_tmc, 
-                np.reshape(marginals, (1,-1))
+                self.mem_tmc,
+                np.reshape(marginals, (1, -1))
             ])
             self.idxs_tmc = np.concatenate([
-                self.idxs_tmc, 
-                np.reshape(idxs, (1,-1))
+                self.idxs_tmc,
+                np.reshape(idxs, (1, -1))
             ])
-        
+
     def _tol_mean_score(self):
         """Computes the average performance and its error using bagging."""
         scores = []
@@ -325,18 +326,18 @@ class DShap(object):
                 self.model.fit(self.X, self.y)
             else:
                 self.model.fit(self.X, self.y,
-                              sample_weight=self.sample_weight)
+                               sample_weight=self.sample_weight)
             for _ in range(100):
                 bag_idxs = np.random.choice(len(self.y_test), len(self.y_test))
                 scores.append(self.value(
-                    self.model, 
+                    self.model,
                     metric=self.metric,
-                    X=self.X_test[bag_idxs], 
+                    X=self.X_test[bag_idxs],
                     y=self.y_test[bag_idxs]
                 ))
         self.tol = np.std(scores)
         self.mean_score = np.mean(scores)
-        
+
     def one_iteration(self, tolerance, sources=None):
         """Runs one iteration of TMC-Shapley algorithm."""
         if sources is None:
@@ -358,23 +359,23 @@ class DShap(object):
                 sample_weight_batch = None
             else:
                 sample_weight_batch = np.concatenate([
-                    sample_weight_batch, 
+                    sample_weight_batch,
                     self.sample_weight[sources[idx]]
                 ])
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                if (self.is_regression 
-                    or len(set(y_batch)) == len(set(self.y_test))): ##FIXIT
+                if (self.is_regression
+                        or len(set(y_batch)) == len(set(self.y_test))):  ##FIXIT
                     self.restart_model()
                     if sample_weight_batch is None:
                         self.model.fit(X_batch, y_batch)
                     else:
                         self.model.fit(
-                            X_batch, 
+                            X_batch,
                             y_batch,
-                            sample_weight = sample_weight_batch
+                            sample_weight=sample_weight_batch
                         )
-                    new_score = self.value(self.model, metric=self.metric)       
+                    new_score = self.value(self.model, metric=self.metric)
             marginal_contribs[sources[idx]] = (new_score - old_score)
             marginal_contribs[sources[idx]] /= len(sources[idx])
             distance_to_full_score = np.abs(new_score - self.mean_score)
@@ -385,14 +386,14 @@ class DShap(object):
             else:
                 truncation_counter = 0
         return marginal_contribs, idxs
-    
+
     def restart_model(self):
-        
+
         try:
             self.model = clone(self.model)
         except:
             self.model.fit(np.zeros((0,) + self.X.shape[1:]), self.y)
-        
+
     def _one_step_lr(self):
         """Computes the best learning rate for G-Shapley algorithm."""
         if self.directory is None:
@@ -402,10 +403,10 @@ class DShap(object):
         best_acc = 0.0
         for i in np.arange(1, 5, 0.5):
             model = ShapNN(
-                self.problem, batch_size=1, max_epochs=1, 
-                learning_rate=10**(-i), weight_decay=0., 
-                validation_fraction=0, optimizer='sgd', 
-                warm_start=False, address=address, 
+                self.problem, batch_size=1, max_epochs=1,
+                learning_rate=10 ** (-i), weight_decay=0.,
+                validation_fraction=0, optimizer='sgd',
+                warm_start=False, address=address,
                 hidden_units=self.hidden_units)
             accs = []
             for _ in range(10):
@@ -413,10 +414,10 @@ class DShap(object):
                 model.fit(self.X, self.y)
                 accs.append(model.score(self.X_test, self.y_test))
             if np.mean(accs) - np.std(accs) > best_acc:
-                best_acc  = np.mean(accs) - np.std(accs)
-                learning_rate = 10**(-i)
+                best_acc = np.mean(accs) - np.std(accs)
+                learning_rate = 10 ** (-i)
         return learning_rate
-    
+
     def _g_shap(self, iterations, err=None, learning_rate=None, sources=None):
         """Method for running G-Shapley algorithm.
         
@@ -430,9 +431,9 @@ class DShap(object):
                    or dict.
         """
         if sources is None:
-            sources = {i:np.array([i]) for i in range(len(self.X))}
+            sources = {i: np.array([i]) for i in range(len(self.X))}
         elif not isinstance(sources, dict):
-            sources = {i:np.where(sources==i)[0] for i in set(sources)}
+            sources = {i: np.where(sources == i)[0] for i in set(sources)}
         address = None
         if self.directory is not None:
             address = os.path.join(self.directory, 'weights')
@@ -443,17 +444,17 @@ class DShap(object):
                 self.g_shap_lr = self._one_step_lr()
                 learning_rate = self.g_shap_lr
         model = ShapNN(self.problem, batch_size=1, max_epochs=1,
-                     learning_rate=learning_rate, weight_decay=0.,
-                     validation_fraction=0, optimizer='sgd',
-                     address=address, hidden_units=self.hidden_units)
+                       learning_rate=learning_rate, weight_decay=0.,
+                       validation_fraction=0, optimizer='sgd',
+                       address=address, hidden_units=self.hidden_units)
         for iteration in range(iterations):
             model.fit(np.zeros((0, self.X.shape[-1])), self.y)
-            if 10 * (iteration+1) / iterations % 1 == 0:
+            if 10 * (iteration + 1) / iterations % 1 == 0:
                 print('{} out of {} G-Shapley iterations'.format(
                     iteration + 1, iterations))
             marginal_contribs = np.zeros(len(sources.keys()))
-            model.fit(self.X, self.y, self.X_test, self.y_test, 
-                      sources=sources, metric=self.metric, 
+            model.fit(self.X, self.y, self.X_test, self.y_test,
+                      sources=sources, metric=self.metric,
                       max_epochs=1, batch_size=1)
             val_result = model.history['metrics']
             marginal_contribs[1:] += val_result[0][1:]
@@ -463,10 +464,10 @@ class DShap(object):
                 individual_contribs[sources[index]] += marginal_contribs[i]
                 individual_contribs[sources[index]] /= len(sources[index])
             self.mem_g = np.concatenate(
-                [self.mem_g, np.reshape(individual_contribs, (1,-1))])
+                [self.mem_g, np.reshape(individual_contribs, (1, -1))])
             self.idxs_g = np.concatenate(
-                [self.idxs_g, np.reshape(model.history['idxs'][0], (1,-1))])
-    
+                [self.idxs_g, np.reshape(model.history['idxs'][0], (1, -1))])
+
     def _calculate_loo_vals(self, sources=None, metric=None):
         """Calculated leave-one-out values for the given metric.
         
@@ -480,18 +481,18 @@ class DShap(object):
             Leave-one-out scores
         """
         if sources is None:
-            sources = {i:np.array([i]) for i in range(len(self.X))}
+            sources = {i: np.array([i]) for i in range(len(self.X))}
         elif not isinstance(sources, dict):
-            sources = {i:np.where(sources==i)[0] for i in set(sources)}
+            sources = {i: np.where(sources == i)[0] for i in set(sources)}
         print('Starting LOO score calculations!')
         if metric is None:
-            metric = self.metric 
+            metric = self.metric
         self.restart_model()
         if self.sample_weight is None:
             self.model.fit(self.X, self.y)
         else:
             self.model.fit(self.X, self.y,
-                          sample_weight=self.sample_weight)
+                           sample_weight=self.sample_weight)
         baseline_value = self.value(self.model, metric=metric)
         vals_loo = np.zeros(len(self.X))
         for i in sources.keys():
@@ -503,18 +504,18 @@ class DShap(object):
                 self.model.fit(X_batch, y_batch)
             else:
                 self.model.fit(X_batch, y_batch, sample_weight=sw_batch)
-                
+
             removed_value = self.value(self.model, metric=metric)
             vals_loo[sources[i]] = (baseline_value - removed_value)
             vals_loo[sources[i]] /= len(sources[i])
         return vals_loo
-    
+
     def _merge_parallel_results(self, key, max_samples=None):
         """Helper method for 'merge_results' method."""
         numbers = [name.split('.')[-2].split('_')[-1]
-                   for name in os.listdir(self.directory) 
+                   for name in os.listdir(self.directory)
                    if 'mem_{}'.format(key) in name]
-        mem  = np.zeros((0, self.X.shape[0]))
+        mem = np.zeros((0, self.X.shape[0]))
         n_sources = len(self.X) if self.sources is None else len(self.sources)
         idxs = np.zeros((0, n_sources), int)
         vals = np.zeros(len(self.X))
@@ -524,7 +525,7 @@ class DShap(object):
                 if counter > max_samples:
                     break
             samples_dir = os.path.join(
-                self.directory, 
+                self.directory,
                 'mem_{}_{}.pkl'.format(key, number)
             )
             print(samples_dir)
@@ -538,13 +539,13 @@ class DShap(object):
             vals += len(dic['mem_{}'.format(key)]) / counter * np.mean(mem, 0)
             os.remove(samples_dir)
         merged_dir = os.path.join(
-            self.directory, 
+            self.directory,
             'mem_{}_0000.pkl'.format(key)
         )
-        pkl.dump({'mem_{}'.format(key): mem, 'idxs_{}'.format(key): idxs}, 
+        pkl.dump({'mem_{}'.format(key): mem, 'idxs_{}'.format(key): idxs},
                  open(merged_dir, 'wb'))
         return mem, idxs, vals
-            
+
     def merge_results(self, max_samples=None):
         """Merge all the results from different runs.
         
@@ -558,14 +559,17 @@ class DShap(object):
             return
         g_results = self._merge_parallel_results('g', max_samples)
         self.marginals_g, self.indexes_g, self.values_g = g_results
-    
-    def performance_plots(self, vals, name=None, 
-                          num_plot_markers=20, sources=None):
+
+    def performance_plots(self, vals, name=None,
+                          num_plot_markers=20, sources=None, figsize=(8, 8), fontsize=25):
         """Plots the effect of removing valuable points.
         
         Args:
             vals: A list of different valuations of data points each
                  in the format of an array in the same length of the data.
+                 If 3 values are present they should be in the following order:
+                 TMC-Shapley, G-Shapley, LOO. If 2 values are present: TMC-Shapley,
+                  LOO. If 1 value is present: TMC-Shapley only.
             name: Name of the saved plot if not None.
             num_plot_markers: number of points in each plot.
             sources: If values are for sources of data points rather than
@@ -576,79 +580,79 @@ class DShap(object):
             Plots showing the change in performance as points are removed
             from most valuable to least.
         """
-        plt.rcParams['figure.figsize'] = 8,8
-        plt.rcParams['font.size'] = 25
+        plt.rcParams['figure.figsize'] = figsize
+        plt.rcParams['font.size'] = fontsize
         plt.xlabel('Fraction of train data removed (%)')
-        plt.ylabel('Prediction accuracy (%)', fontsize=20)
+        plt.ylabel('Prediction accuracy (%)', fontsize=fontsize)
         if not isinstance(vals, list) and not isinstance(vals, tuple):
             vals = [vals]
         if sources is None:
-            sources = {i:np.array([i]) for i in range(len(self.X))}
+            sources = {i: np.array([i]) for i in range(len(self.X))}
         elif not isinstance(sources, dict):
-            sources = {i:np.where(sources==i)[0] for i in set(sources)}
-        vals_sources = [np.array([np.sum(val[sources[i]]) 
+            sources = {i: np.where(sources == i)[0] for i in set(sources)}
+        vals_sources = [np.array([np.sum(val[sources[i]])
                                   for i in range(len(sources.keys()))])
-                  for val in vals]
+                        for val in vals]
         if len(sources.keys()) < num_plot_markers:
             num_plot_markers = len(sources.keys()) - 1
         plot_points = np.arange(
-            0, 
+            0,
             max(len(sources.keys()) - 10, num_plot_markers),
-            max(len(sources.keys())//num_plot_markers, 1)
+            max(len(sources.keys()) // num_plot_markers, 1)
         )
         perfs = [self._portion_performance(
             np.argsort(vals_source)[::-1], plot_points, sources=sources)
-                 for vals_source in vals_sources]
+            for vals_source in vals_sources]
         rnd = np.mean([self._portion_performance(
             np.random.permutation(np.argsort(vals_sources[0])[::-1]),
             plot_points, sources=sources) for _ in range(10)], 0)
-        plt.plot(plot_points/len(self.X) * 100, perfs[0] * 100, 
+        plt.plot(plot_points / len(self.X) * 100, perfs[0] * 100,
                  '-', lw=5, ms=10, color='b')
-        if len(vals)==3:
-            plt.plot(plot_points/len(self.X) * 100, perfs[1] * 100, 
+        if len(vals) == 3:
+            plt.plot(plot_points / len(self.X) * 100, perfs[1] * 100,
                      '--', lw=5, ms=10, color='orange')
             legends = ['TMC-Shapley ', 'G-Shapley ', 'LOO', 'Random']
-        elif len(vals)==2:
+        elif len(vals) == 2:
             legends = ['TMC-Shapley ', 'LOO', 'Random']
         else:
             legends = ['TMC-Shapley ', 'Random']
-        plt.plot(plot_points/len(self.X) * 100, perfs[-1] * 100, 
+        plt.plot(plot_points / len(self.X) * 100, perfs[-1] * 100,
                  '-.', lw=5, ms=10, color='g')
-        plt.plot(plot_points/len(self.X) * 100, rnd * 100, 
-                 ':', lw=5, ms=10, color='r')    
+        plt.plot(plot_points / len(self.X) * 100, rnd * 100,
+                 ':', lw=5, ms=10, color='r')
         plt.legend(legends)
         if self.directory is not None and name is not None:
             plt.savefig(os.path.join(
                 self.directory, 'plots', '{}.png'.format(name)),
-                        bbox_inches = 'tight')
+                bbox_inches='tight')
             plt.close()
-            
+
     def _portion_performance(self, idxs, plot_points, sources=None):
         """Given a set of indexes, starts removing points from 
         the first elemnt and evaluates the new model after
         removing each point."""
         if sources is None:
-            sources = {i:np.array([i]) for i in range(len(self.X))}
+            sources = {i: np.array([i]) for i in range(len(self.X))}
         elif not isinstance(sources, dict):
-            sources = {i:np.where(sources==i)[0] for i in set(sources)}
+            sources = {i: np.where(sources == i)[0] for i in set(sources)}
         scores = []
         init_score = self.random_score
         for i in range(len(plot_points), 0, -1):
-            keep_idxs = np.concatenate([sources[idx] for idx 
-                                        in idxs[plot_points[i-1]:]], -1)
+            keep_idxs = np.concatenate([sources[idx] for idx
+                                        in idxs[plot_points[i - 1]:]], -1)
             X_batch, y_batch = self.X[keep_idxs], self.y[keep_idxs]
             if self.sample_weight is not None:
                 sample_weight_batch = self.sample_weight[keep_idxs]
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                if (self.is_regression 
-                    or len(set(y_batch)) == len(set(self.y_test))):
+                if (self.is_regression
+                        or len(set(y_batch)) == len(set(self.y_test))):
                     self.restart_model()
                     if self.sample_weight is None:
                         self.model.fit(X_batch, y_batch)
                     else:
                         self.model.fit(X_batch, y_batch,
-                                      sample_weight=sample_weight_batch)
+                                       sample_weight=sample_weight_batch)
                     scores.append(self.value(
                         self.model,
                         metric=self.metric,
@@ -659,7 +663,8 @@ class DShap(object):
                     scores.append(init_score)
         return np.array(scores)[::-1]
 
-    def convergence_plots(self, source_indexes=None, tmc_plot=True, g_plot=False, num_cols=5, figsize=(12,16), h_pad=3, w_pad=3):
+    def convergence_plots(self, source_indexes=None, tmc_plot=True, g_plot=False, num_cols=5, figsize=(12, 16), h_pad=3,
+                          w_pad=3):
         num_subplots = 0
         if source_indexes is None:
             source_indexes = np.arange(len(self.sources))
@@ -682,7 +687,7 @@ class DShap(object):
             num_plot_markers = min(num_tmc_iter, num_g_iter)
 
         fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=figsize, squeeze=True)
-        fig.tight_layout(h_pad=h_pad, w_pad=w_pad) # fig.tight_layout(h_pad=2)
+        fig.tight_layout(h_pad=h_pad, w_pad=w_pad)  # fig.tight_layout(h_pad=2)
 
         axes_1d = axes.reshape(-1)
         last_axes_idx = 0
