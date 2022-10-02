@@ -664,13 +664,13 @@ class DShap(object):
         return np.array(scores)[::-1]
 
     def convergence_plots(self, source_indexes=None, tmc_plot=True, g_plot=False, num_cols=5, figsize=(12, 16), h_pad=3,
-                          w_pad=3):
+                          w_pad=3, plot_more_than_25=False):
         num_subplots = 0
         if source_indexes is None:
             source_indexes = np.arange(len(self.sources))
 
         num_subplots = len(source_indexes)
-        if num_subplots > 25:
+        if plot_more_than_25 is False and num_subplots > 25:
             raise Exception("Cannot plot more than 25 sources")
         num_rows = num_subplots // num_cols
         if num_subplots % num_cols > 0:
