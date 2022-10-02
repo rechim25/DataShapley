@@ -16,8 +16,10 @@ To divide value fairly between individual train data points/sources given the le
 `DShap` object - encapsulates functionalities of TMC- and G-Shapley, as well as LOO.
 - `X`: Data covariates.
 - `y`: Data labels.
-- `X_test`: Test+Held-out covariates.
-- `y_test`: Test+Held-out labels.
+- `X_test`: Test+Held-out covariates. Test set is used to valuate the score of the model.
+  Held-out set is used for testing performance loss using function `performance_plots()`.
+- `y_test`: Test+Held-out labels. Test set is used to valuate the score of the model.
+  Held-out set is used for testing performance loss using function `performance_plots()`.
 - `sources`: An array or dictionary assiging each point to its group.
 If None, evey points gets its individual value.
 - `samples_weights`: Weight of train samples in the loss function.
@@ -48,7 +50,9 @@ Notes on above parameters:
 `run()`- Calculates DSHAP values for every data source in the dataset.
 - `save_every`: save marginal contributions every n iterations.
 - `err`: stopping criteria (convergence).
-- `tolerance` (default `0.01`): Truncation tolerance. If None, it's computed.
+- `tolerance` (default `0.01`): Truncation tolerance. Truncation is performed if marginal 
+contribution is less than the given tolerance for 5 consecutive iterations. 
+If None, it's computed. 
 - `g_run` (default `True`): If True, computes G-Shapley values.
 - `loo_run`(default `True`): If True, computes and saves leave-one-out scores.
 
