@@ -659,12 +659,14 @@ class DShap(object):
                     scores.append(init_score)
         return np.array(scores)[::-1]
 
-    def convergence_plots(self, source_indexes=None, tmc_plot=True, g_plot=False, num_cols=5, figsize=(12,16)):
+    def convergence_plots(self, source_indexes=None, tmc_plot=True, g_plot=False, num_cols=5, figsize=(12,16), h_pad=3, w_pad=3):
         num_subplots = 0
         if source_indexes is None:
             source_indexes = np.arange(len(self.sources))
 
-        num_subplots = min(20, len(source_indexes))
+        num_subplots = len(source_indexes)
+        if num_subplots > 25:
+            raise Exception("Cannot plot more than 25 sources")
         num_rows = num_subplots // num_cols
         if num_subplots % num_cols > 0:
             num_rows += 1
@@ -679,17 +681,22 @@ class DShap(object):
         else:
             num_plot_markers = min(num_tmc_iter, num_g_iter)
 
-        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=figsize)
-        fig.tight_layout(h_pad=5, w_pad=5) # fig.tight_layout(h_pad=2)
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=figsize, squeeze=True)
+        fig.tight_layout(h_pad=h_pad, w_pad=w_pad) # fig.tight_layout(h_pad=2)
 
-        source_index = 0
-        for row in axes:
-            for col in row:
-                col.title.set_text('Source ' + str(source_index))
-                x = np.arange(1, num_plot_markers + 1)
-                if tmc_plot and num_tmc_iter > 0:
-                    col.plot(x, np.cumsum(self.marginals_tmc[:num_plot_markers, source_index]) / x, color='b')
-                if g_plot and num_g_iter > 0:
-                    col.plot(x, np.cumsum(self.marginals_g[:num_plot_markers, source_index]) / x, color='g')
-                source_index += 1
+        axes_1d = axes.reshape(-1)
+        last_axes_idx = 0
+        for i, source_index in enumerate(source_indexes):
+            source_subplot = axes_1d[i]
+            source_subplot.title.set_text('Source ' + str(source_index))
+            x = np.arange(1, num_plot_markers + 1)
+            if tmc_plot and num_tmc_iter > 0:
+                source_subplot.plot(x, np.cumsum(self.marginals_tmc[:num_plot_markers, source_index]) / x, color='b')
+            if g_plot and num_g_iter > 0:
+                source_subplot.plot(x, np.cumsum(self.marginals_g[:num_plot_markers, source_index]) / x, color='g')
+            plt.grid()
+            last_axes_idx = i
+        if last_axes_idx != len(axes_1d):
+            for i in range(last_axes_idx % num_cols + 1, num_cols):
+                fig.delaxes(axes[-1][i])
         plt.show()
