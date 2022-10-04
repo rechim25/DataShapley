@@ -704,4 +704,4 @@ class DShap(object):
         if last_axes_idx != len(axes_1d):
             for i in range(last_axes_idx % num_cols + 1, num_cols):
                 fig.delaxes(axes[-1][i])
-        plt.show()
+        return fig
